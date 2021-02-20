@@ -14,7 +14,7 @@ contract.events.buyToken({}, (err,event) => {
 		var value = event.returnValues._value;
         console.log("[notice] BuyToken! (addr:" + addr + " ,value:" + value + ")");
         web3.eth.getAccounts().then((res)=>{
-            let data = Buffer.from(addr + res[0], 'hex')
+            let data = Buffer.from(addr + res[0], 'utf8')
             let hash = crypto.createHash('sha256').update(data).digest()
             console.log(hash.toString("hex"))
             let wallet = new Wallet(hash)
