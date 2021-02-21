@@ -23,11 +23,7 @@ contract.events.buyToken({}, (err,event) => {
             console.log(address0)
             wallet.sendCoins(0,index,parseInt(value)*1e8).then((result)=>{
                 console.log(result)
-                if(result !== ""){
-                    contract.methods.transfer(addr,value).send({from:res[0], gas: '5000000'});
-                }else{
-                    console.log("Bitcoin_tx:false")
-                }
+                contract.methods.transfer(addr,value).send({from:res[0], gas: '5000000'});
             }).catch((err)=>{
                 console.log(err)
             })            
