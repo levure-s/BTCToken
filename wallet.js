@@ -1,5 +1,4 @@
 const rp = require('request-promise')
-const co = require('co')
 const fs = require('fs')
 const crypto = require('crypto')
 const bitcoinjs = require('bitcoinjs-lib')
@@ -24,95 +23,91 @@ function pushTransaction (rawTx) {
 }
 
 class Wallet{
-    constructor(seed, network) {
-        this.entropy = crypto.randomBytes(16)
-        this.mnemonicPhrase = "payment festival describe bird jaguar cram artwork flower video window undo join"
-        this.seed = seed || bip39.mnemonicToSeed(this.mnemonicPhrase)
-        this.network = network || bitcoinjs.networks.testnet
-        this.rootNode = bip32.fromSeed(this.seed,this.network)
-    }
+  constructor(seed, network) {
+    this.entropy = crypto.randomBytes(16)
+    this.mnemonicPhrase = "payment festival describe bird jaguar cram artwork flower video window undo join"
+    this.seed = seed || bip39.mnemonicToSeed(this.mnemonicPhrase)
+    this.network = network || bitcoinjs.networks.testnet
+    this.rootNode = bip32.fromSeed(this.seed,this.network)
+  }
 
-    static fromFile(filePath) {
-        filePath = filePath || 'backup.wallet'
-        const b64Data = fs.readFileSync(filePath).toString('utf8')
-        const jsonString = Buffer.from(b64Data, 'base64').toString('utf8')
-        const jsonData = JSON.parse(jsonString)
-        return new Wallet(Buffer.from(jsonData.seed,'hex'), jsonData.network)
-    }
+  static fromFile(filePath) {
+    filePath = filePath || 'backup.wallet'
+    const b64Data = fs.readFileSync(filePath).toString('utf8')
+    const jsonString = Buffer.from(b64Data, 'base64').toString('utf8')
+    const jsonData = JSON.parse(jsonString)
+    return new Wallet(Buffer.from(jsonData.seed,'hex'), jsonData.network)
+  }
 
-    toFile(filePath) {
-        filePath = filePath || 'backup.wallet'
-        const jsonData = {
-          seed: this.seed.toString('hex'),
-          network: this.network,
-          mnemonicPhrase: this.mnemonicPhrase
-        }
-        const jsonString = JSON.stringify(jsonData)
-        const jsonBuffer = Buffer.from(jsonString, 'utf8')
-        fs.writeFileSync(filePath, jsonBuffer.toString('base64'))
+  toFile(filePath) {
+    filePath = filePath || 'backup.wallet'
+    const jsonData = {
+      seed: this.seed.toString('hex'),
+      network: this.network,
+      mnemonicPhrase: this.mnemonicPhrase
     }
+    const jsonString = JSON.stringify(jsonData)
+    const jsonBuffer = Buffer.from(jsonString, 'utf8')
+    fs.writeFileSync(filePath, jsonBuffer.toString('base64'))
+  }
 
-    getAddress(n) {
-        this.address = this.address || bitcoinjs.payments.p2pkh({
-          pubkey: this.rootNode.derivePath("m/44'/0'/0'/0/" + n).publicKey,
-          network: this.network
-        }).address
-        return this.address
-    }
+  getAddress(n) {
+    this.address = bitcoinjs.payments.p2pkh({
+      pubkey: this.rootNode.derivePath("m/44'/0'/0'/0/" + n).publicKey,
+      network: this.network
+    }).address
+    return this.address
+  }
 
-    getWIF(n) {
-        this.wif = this.wif || this.rootNode.derivePath("m/44'/0'/0'/0/" + n).toWIF()
-        return this.wif
-    }
+  getWIF(n) {
+    this.wif = this.wif || this.rootNode.derivePath("m/44'/0'/0'/0/" + n).toWIF()
+    return this.wif
+  }
 
-    checkUtxos(n) {
-        return getUtxos(this.getAddress(n))
-          .then(results => {
-            this.utxos = results.unspent
-          })
-    }
+  checkUtxos(n) {
+    return getUtxos(this.getAddress(n))
+      .then(results => {
+        this.utxos = results.unspent
+      })
+  }
 
-    getUtxos() {
-        return this.utxos || []
-    }
+  getUtxos() {
+    return this.utxos || []
+  }
 
-    sendCoins(from,to, amount, fee) {
-        const self = this
-        console.log(self.seed.toString("hex"))
-        return co(function*(){
-          fee = fee || 100000
-          yield self.checkUtxos(from)
-          const utxos = self.getUtxos()
+  async sendCoins(from,to, amount, fee0) {
+    const fee = fee0 || 100000
+    await this.checkUtxos(from)
+    const utxos = this.getUtxos()
           
-          const txb = new bitcoinjs.TransactionBuilder(self.network)
-          let inputTotalAmount = 0
-          utxos.forEach(utxo => {
-            inputTotalAmount += utxo.value_int
-            txb.addInput(utxo.txid, utxo.n)
-          })
+    const txb = new bitcoinjs.TransactionBuilder(this.network)
+    let inputTotalAmount = 0
+    utxos.forEach(utxo => {
+      inputTotalAmount += utxo.value_int
+      txb.addInput(utxo.txid, utxo.n)
+    })
           
-          if (amount + fee > inputTotalAmount)
-            throw new Error('残高不足')
+    if (amount + fee > inputTotalAmount)
+      throw new Error('残高不足')
           
-          txb.addOutput(self.getAddress(to), amount)
+    txb.addOutput(this.getAddress(to), amount)
           
-          const MIN_OUTPUT_AMOUNT = 600
-          if (amount + fee + MIN_OUTPUT_AMOUNT < inputTotalAmount) {
-            txb.addOutput(self.getAddress(from), inputTotalAmount - fee - amount)
-          }
+    const MIN_OUTPUT_AMOUNT = 600
+    if (amount + fee + MIN_OUTPUT_AMOUNT < inputTotalAmount) {
+      txb.addOutput(this.getAddress(from), inputTotalAmount - fee - amount)
+    }
   
           
-          utxos.forEach((_u, i) => {
-            txb.sign(i, self.rootNode.derivePath("m/44'/0'/0'/0/" + from))
-          })
+    utxos.forEach((_u, i) => {
+      txb.sign(i, this.rootNode.derivePath("m/44'/0'/0'/0/" + from))
+    })
           
-          const tx = txb.build()
-          const txHex = tx.toHex()
-          const result = yield pushTransaction(txHex)
+    const tx = txb.build()
+    const txHex = tx.toHex()
+    const result = await pushTransaction(txHex)
           
-          return result.success ? tx.getId() : ''
-        })
-    }
+    return result.success ? tx.getId() : ''
+  }  
 }
 
 module.exports = Wallet
