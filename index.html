@@ -1,0 +1,71 @@
+<html>
+    <head>
+
+    </head>
+    <body>
+        <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+        <script src="./deployed_info.js"></script>
+        <script>
+            window.onload = () => {
+                if(typeof abi === 'undefined') {
+                    document.getElementById('info').innerHTML = "[deployed_info.js]ファイルが見つかりません。確認して下さい。";
+                    return;
+                }
+                if (typeof window.ethereum !== 'undefined') {
+                    const ethEnabled = () => {
+                        if (window.ethereum) {
+                            window.web3 = new Web3(window.ethereum);
+                            window.ethereum.enable();
+                            return true;
+                        }
+                        return false;
+                    }
+                    console.log(window.web3.eth.accounts[0])
+                    init();
+                } else {
+                    document.getElementById('info').innerHTML = "MetaMaskが見つかりません";
+                }
+            }
+
+            function init(){
+                document.getElementById('livenetwork').innerHTML = deployed_network;
+                window.contract = window.web3.eth.contract(abi).at(address);
+                window.contract.balanceOfMe().call((err,res)=>{
+                    if(!err){
+                        document.getElementById('info').innerHTML = window.web3.eth.accounts[0]
+                        document.getElementById('balance').innerHTML = res
+                    }else{
+                        console.log("balanceOfMeerr: " + err);
+                    }
+                })
+		
+            }
+
+            function buyToken(){
+                var amount = document.getElementById('p1amount').value
+                window.contract.BuyToken(amount).sendTransaction({from:window.web3.eth.accounts[0], gas:5500000}).then((err,res)=>{
+                    if(!err){
+                        document.getElementById('p1result').innerHTML = res
+                    }else{
+                        console.log("BuyToken:NG" + err)
+                        document.getElementById('p1result').innerHTML = "購入に失敗しました"
+                    }
+                })
+            }
+        </script>
+        <main>
+            <div class="area_title">
+                <font size="+2">Bitcoin Token</font> (Address: <span id="info"></span>
+                , 残高: <span id="balance"></span>BTC,ネットワーク：<span id="livenetwork"></span>)
+            </div>
+            <hr>
+            <div class = "area_p1">
+                <span id="p1title"><font size="+2">◆売買</font></span><br><br>
+                <input type="text" id="p1amount">BTC
+                <input type="button" id="p1buybutton" value="購入" onclick="buyToken();"/>
+                　<font color="red"><span id="p1result"></span></font>
+            </div>
+        </main>
+        
+    </body>
+</html>

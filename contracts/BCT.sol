@@ -1,14 +1,18 @@
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity >=0.4.22 <0.9.0;
 
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 contract BTCToken is ERC20 {
+    string public symbol;
+    string public  name;
     address owner = msg.sender;
     event buyToken(address _sender, uint _value);
     event sellToken(address _sender, uint _value);
     
 
-    constructor() ERC20("BitcoinToken","BCT") public {
+    constructor() public {
+        symbol = "BCT";
+        name = "BitcoinToken";
         _mint(msg.sender, 11579208923731619542357098500868790785326998466564056403945758400791312963993);
     }
 

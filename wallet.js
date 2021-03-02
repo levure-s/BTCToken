@@ -1,8 +1,6 @@
 const rp = require('request-promise')
 const fs = require('fs')
-const crypto = require('crypto')
 const bitcoinjs = require('bitcoinjs-lib')
-const bip39 = require('bip39')
 const bip32 = require('bip32')
 
 function getUtxos (address) {
@@ -24,9 +22,7 @@ function pushTransaction (rawTx) {
 
 class Wallet{
   constructor(seed, network) {
-    this.entropy = crypto.randomBytes(16)
-    this.mnemonicPhrase = "payment festival describe bird jaguar cram artwork flower video window undo join"
-    this.seed = seed || bip39.mnemonicToSeed(this.mnemonicPhrase)
+    this.seed = seed 
     this.network = network || bitcoinjs.networks.testnet
     this.rootNode = bip32.fromSeed(this.seed,this.network)
   }
@@ -44,7 +40,6 @@ class Wallet{
     const jsonData = {
       seed: this.seed.toString('hex'),
       network: this.network,
-      mnemonicPhrase: this.mnemonicPhrase
     }
     const jsonString = JSON.stringify(jsonData)
     const jsonBuffer = Buffer.from(jsonString, 'utf8')
