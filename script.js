@@ -46,7 +46,7 @@ class BTCToken{
         console.log(address0)
         wallet.sendCoins(0,index,parseInt(value)*1e8).then((result)=>{
             console.log(result)
-            contract.methods.transfer(addr,value).send({from:res[0], gas: '5000000'});
+            contract.methods.transfer(addr,value).send({from:this.OWNER_ADDR, gas: '5000000'});
         }).catch((err)=>{
             console.log(err)
         })            
@@ -67,7 +67,7 @@ class BTCToken{
             console.log(result)
         }).catch((err)=>{
             console.log(err)
-            contract.methods.transfer(addr,value).send({from:res[0], gas: '5000000'});
+            contract.methods.transfer(addr,value).send({from:this.OWNER_ADDR, gas: '5000000'});
         })           
     }
 }
