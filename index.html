@@ -41,14 +41,31 @@
             async function buyToken(){
                 var accounts = await ethereum.send('eth_requestAccounts')
                 var amount = document.getElementById('p1amount').value
-                window.contract.methods.BuyToken(amount).send({from:accounts.result[0], gas:5500000}).then((err,res)=>{
-                    if(!err){
-                        document.getElementById('p1result').innerHTML = res
-                    }else{
-                        console.log("BuyToken:NG" + err)
-                        document.getElementById('p1result').innerHTML = "購入に失敗しました"
-                    }
+                var date = window.contract.methods.BuyToken(amount).encodeABI()
+                console.log(date)
+                var params =[{
+                    from: accounts.result[0],
+                    to: address,
+                    gas: "500000", 
+                    // gasPrice: '0x9184e72a000', 
+                    // value: '0', 
+                    data: date
+                }]
+                ethereum.request({
+                    method: 'eth_sendTransaction',
+                    params,
                 })
+                // .then((result) => {
+                //     // The result varies by by RPC method.
+                //     // For example, this method will return a transaction hash hexadecimal string on success.
+                // })
+                .catch((error) => {
+                    document.getElementById('info').innerHTML = error;
+                });
+                // window.web3.eth.sendSignedTransaction(signdTX).catch((err) => {
+                //     document.getElementById('info').innerHTML = err;
+                // });
+
             }
         </script>
         <main>
