@@ -8,6 +8,7 @@ app.get('/', (req, res) => { res.redirect("/"); });
 
 const info = require("./deployed_info.js")
 const Wallet = require("./wallet.js")
+const sub = new (require("./sub.js"))
 
 const INFURA_PROJECT_ID = "d11c17162d934093bf8bafa878e42df7";
 var web3 = new (require("web3"));
@@ -29,8 +30,7 @@ class BTCToken{
     }
 
     async initGanache() {
-        this.accounts = await web3.eth.getAccounts();
-        this.OWNER_ADDR = this.accounts[0];
+        this.OWNER_ADDR = await sub.getAccount()
         return true;
     }
 
@@ -38,6 +38,7 @@ class BTCToken{
         var addr = event.returnValues._sender;
 		var value = event.returnValues._value;
         console.log("[notice] BuyToken! (addr:" + addr + " ,value:" + value + ")");
+        console.log(this.OWNER_ADDR)
         let data = Buffer.from(addr + this.OWNER_ADDR, 'utf8')
         let hash = crypto.createHash('sha256').update(data).digest()
         console.log(hash.toString("hex"))
@@ -47,7 +48,7 @@ class BTCToken{
         console.log(address0)
         wallet.sendCoins(0,index,parseInt(value)*1e8).then((result)=>{
             console.log(result)
-            contract.methods.transfer(addr,value).send({from:res[0], gas: '5000000'});
+            sub.contractTransfer(addr,value)
         }).catch((err)=>{
             console.log(err)
         })            
@@ -68,7 +69,7 @@ class BTCToken{
             console.log(result)
         }).catch((err)=>{
             console.log(err)
-            contract.methods.transfer(addr,value).send({from:res[0], gas: '5000000'});
+            sub.contractTransfer(addr,value)
         })           
     }
 }

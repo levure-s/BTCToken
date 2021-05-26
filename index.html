@@ -1,6 +1,6 @@
 <html>
     <head>
-
+        <link rel="stylesheet" href="./style.css">
     </head>
     <body>
         <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
@@ -47,37 +47,58 @@
                     from: accounts.result[0],
                     to: address,
                     gas: "500000", 
-                    // gasPrice: '0x9184e72a000', 
-                    // value: '0', 
                     data: date
                 }]
                 ethereum.request({
                     method: 'eth_sendTransaction',
                     params,
                 })
-                // .then((result) => {
-                //     // The result varies by by RPC method.
-                //     // For example, this method will return a transaction hash hexadecimal string on success.
-                // })
                 .catch((error) => {
-                    document.getElementById('info').innerHTML = error;
+                    document.getElementById('p1result').innerHTML = error;
                 });
-                // window.web3.eth.sendSignedTransaction(signdTX).catch((err) => {
-                //     document.getElementById('info').innerHTML = err;
-                // });
+            }
 
+            async function sellToken(){
+                var accounts = await ethereum.send('eth_requestAccounts')
+                var amount = document.getElementById('p1amount').value
+                var balance = await window.contract.methods.balanceOf(accounts.result[0]).call()
+                if(parseInt(balance) < parseInt(amount)){
+                    document.getElementById('p1result').innerHTML ="残高不足"
+                    console.log("残高不足")
+                    return
+                }
+                var date = window.contract.methods.SellToken(amount).encodeABI()
+                console.log(date)
+                var params =[{
+                    from: accounts.result[0],
+                    to: address,
+                    gas: "500000", 
+                    data: date
+                }]
+                ethereum.request({
+                    method: 'eth_sendTransaction',
+                    params,
+                })
+                .catch((error) => {
+                    document.getElementById('p1result').innerHTML = error;
+                });
             }
         </script>
         <main>
             <div class="area_title">
-                <font size="+2">Bitcoin Token</font> (Address: <span id="info"></span>
-                , 残高: <span id="balance"></span>BTC,ネットワーク：<span id="livenetwork"></span>)
+                <h1>Bitcoin Token</h1>
+                <div class="area_info">
+                    <p>Address: <span id="info"></span></p>
+                    <p>残高: <span id="balance"></span> BTC</p> 
+                    <p>ネットワーク：<span id="livenetwork"></span></p>
+                </div>
             </div>
             <hr>
             <div class = "area_p1">
-                <span id="p1title"><font size="+2">◆売買</font></span><br><br>
-                <input type="text" id="p1amount">BTC
-                <input type="button" id="p1buybutton" value="購入" onclick="buyToken();"/>
+                <h3>◆売買</h3></span><br><br>
+                <input type="number" id="p1amount"> <font size="+2"><span>BTC</span></font><br>
+                <input type="button" id="p1button" value="購入" onclick="buyToken();"/>
+                <input type="button" id="p1button" value="売却" onclick="sellToken();"/>
                 　<font color="red"><span id="p1result"></span></font>
             </div>
         </main>
